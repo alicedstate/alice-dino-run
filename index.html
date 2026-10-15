@@ -1,0 +1,559 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title> ALICE RUN - Cyber Edition</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden}
+body{
+ background:#030811;color:#e9ffff;font-family:Arial,sans-serif;
+ display:flex;align-items:center;justify-content:center;
+}
+#app{
+ width:100%;height:100%;max-width:1500px;max-height:950px;
+ display:flex;flex-direction:column;padding:clamp(8px,2vw,24px);
+ gap:10px;
+}
+header{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.brand{font-weight:900;font-size:clamp(18px,3vw,32px);color:#34ffdc;letter-spacing:2px}
+.sub{font-size:11px;color:#7fa8c5;letter-spacing:3px;margin-top:4px}
+.stats{display:flex;gap:8px}
+.stat{border:1px solid #14566a;background:#071522;padding:8px 12px;border-radius:9px;min-width:75px}
+.stat small{display:block;font-size:10px;color:#78a9bd}
+.stat b{font-size:clamp(15px,2vw,23px);color:#55fbd8}
+#stage{position:relative;flex:1;min-height:0;border:1px solid #12485b;border-radius:12px;overflow:hidden;background:#07162c}
+canvas{width:100%;height:100%;display:block;touch-action:manipulation}
+#overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;background:#02081799}
+.panel{padding:24px;background:#071421ed;border:1px solid #25f5d4;border-radius:15px;max-width:90%}
+.panel h2{color:#4affd9;font-size:clamp(25px,5vw,44px);margin:0 0 10px}
+.panel p{color:#c0d9e8;line-height:1.6}
+button{border:1px solid #2cf7d4;background:#0b292d;color:#50ffe0;font-weight:bold;padding:12px 20px;border-radius:9px;cursor:pointer;font-size:14px}
+button:hover{background:#154941}
+#start{background:#36ffcc;color:#02100f}
+footer{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.controls{display:flex;gap:7px;flex-wrap:wrap}
+.hint{font-size:12px;color:#84a8bc;line-height:1.8}
+@media(max-width:600px){
+ #app{padding:7px;gap:6px}
+ header{align-items:flex-start}
+ .stats{gap:4px}
+ .stat{min-width:0;padding:6px}
+ .stat small{font-size:8px}
+ .brand{letter-spacing:1px}
+ .sub{font-size:9px;letter-spacing:1px}
+ footer{justify-content:center}
+ .hint{display:none}
+ button{padding:10px 13px}
+}
+
+
+.game-header {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr 1fr;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 8px;
+  border-bottom: 1px solid #0758ff;
+  background:
+    linear-gradient(90deg, #07133b, #05091c, #07133b);
+}
+
+.brand {
+  color: #35f5ff;
+  font-size: clamp(14px, 2vw, 25px);
+  font-weight: 900;
+  letter-spacing: 2px;
+}
+
+.alice-logo {
+  text-align: center;
+  font-family: "Courier New", monospace;
+  font-size: clamp(15px, 5vw, 25px);
+  font-weight: 900;
+  letter-spacing: clamp(3px, 1vw, 12px);
+  color: #fff;
+  -webkit-text-stroke: 1px #50baff;
+  text-shadow:
+    0 0 4px white,
+    0 0 10px #007bff,
+    0 0 22px #004dff,
+    0 0 40px #0033ff;
+  animation: circuitGlow 2s ease-in-out infinite alternate;
+}
+
+@keyframes circuitGlow {
+  from {
+    filter: brightness(.8);
+    text-shadow: 0 0 8px #007bff;
+  }
+  to {
+    filter: brightness(1.3);
+    text-shadow: 0 0 10px white, 0 0 30px #0055ff;
+  }
+}
+
+@media(max-width:600px) {
+  .game-header {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .alice-logo {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
+
+  .brand {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .stats {
+    grid-column: 2;
+    grid-row: 2;
+  }
+}
+
+
+</style>
+</head>
+<body>
+<div id="app">
+
+<header class="game-header">
+  <div class="brand">▰ DINO RUN</div>
+
+  <div class="alice-logo">ALICE</div>
+
+  <div class="stats">
+    <div class="stat">
+      <small>SCORE</small>
+      <b id="score">0</b>
+    </div>
+    <div class="stat">
+      <small>BEST</small>
+      <b id="best">0</b>
+    </div>
+    <div class="stat">
+      <small>COINS</small>
+      <b id="coins">0</b>
+    </div>
+  </div>
+</header>
+
+
+<div id="stage">
+ <canvas id="game"></canvas>
+ <div id="overlay">
+  <div class="panel">
+   <h2 id="title">AFFAN RUN</h2>
+   <p id="desc">Run through the neon desert!<br>
+   Jump over spikes, slide under drones, collect coins.</p>
+   <button id="start">▶ START RUN</button>
+   <p style="font-size:11px">SPACE / ↑ = JUMP · ↓ = SLIDE · S = BOOST</p>
+  </div>
+ </div>
+</div>
+
+<footer>
+ <div class="controls">
+  <button id="jump">⬆ JUMP</button>
+  <button id="slide">⬇ SLIDE</button>
+  <button id="boost">⚡ BOOST</button>
+  <button id="sound">🔊 SOUND ON</button>
+ </div>
+</footer>
+</div>
+
+<script>
+const canvas=document.getElementById('game');
+const ctx=canvas.getContext('2d');
+const stage=document.getElementById('stage');
+const overlay=document.getElementById('overlay');
+const title=document.getElementById('title');
+const desc=document.getElementById('desc');
+const startBtn=document.getElementById('start');
+const $=id=>document.getElementById(id);
+
+let W=900,H=500,ground=400,last=0,elapsed=0;
+let running=false,dead=false,score=0,coins=0,best=0;
+let speed=300,boostTime=0,spawn=0,coinSpawn=0;
+let obstacles=[],pickups=[],particles=[];
+let soundOn=true,audio=null;
+let jumpHeld=false,slideHeld=false;
+
+try{best=Number(localStorage.getItem('cyberDinoBest'))||0}catch(e){}
+$('best').textContent=best;
+
+function resize(){
+ const r=stage.getBoundingClientRect();
+ const dpr=Math.min(window.devicePixelRatio||1,2);
+ canvas.width=Math.max(1,Math.round(r.width*dpr));
+ canvas.height=Math.max(1,Math.round(r.height*dpr));
+ W=900;H=500;ground=H*.80;
+ ctx.setTransform(canvas.width/W,0,0,canvas.height/H,0,0);
+ draw();
+}
+window.addEventListener('resize',resize);
+
+const dino={x:105,y:0,vy:0,w:48,h:52,slide:false,step:0};
+dino.y=ground-dino.h;
+
+function beep(freq=500,duration=.07){
+ if(!soundOn)return;
+ try{
+  audio=audio||new(window.AudioContext||window.webkitAudioContext)();
+  if(audio.state==='suspended')audio.resume();
+  const o=audio.createOscillator(),g=audio.createGain();
+  o.connect(g);g.connect(audio.destination);o.frequency.value=freq;
+  g.gain.value=.045;o.start();
+  g.gain.exponentialRampToValueAtTime(.001,audio.currentTime+duration);
+  o.stop(audio.currentTime+duration);
+ }catch(e){}
+}
+
+function jump(){
+ if(!running||dino.y<ground-dino.h-1)return;
+ dino.vy=-660;beep(450);
+}
+function slide(on){slideHeld=on;dino.slide=on&&dino.y>=ground-dino.h-1}
+function boost(){
+ if(!running)return;
+ boostTime=2.5;beep(850,.15);
+}
+
+function startGame(){
+ score=0;coins=0;speed=300;elapsed=0;spawn=.8;coinSpawn=1;
+ obstacles=[];pickups=[];particles=[];
+ boostTime=0;dead=false;running=true;
+ dino.y=ground-dino.h;dino.vy=0;dino.slide=false;
+ overlay.style.display='none';
+ updateStats();beep(650);
+ last=performance.now();
+ requestAnimationFrame(loop);
+}
+
+function endGame(){
+ running=false;dead=true;
+ best=Math.max(best,Math.floor(score));
+ try{localStorage.setItem('cyberDinoBest',best)}catch(e){}
+ updateStats();beep(130,.3);
+ title.textContent='GAME OVER';
+ desc.innerHTML='SCORE: '+Math.floor(score)+'<br>COINS: '+coins+
+  '<br>BEST: '+best+'<br>Ready for another run?';
+ startBtn.textContent='↻ PLAY AGAIN';
+ overlay.style.display='flex';
+}
+
+startBtn.addEventListener('click',startGame);
+$('jump').addEventListener('pointerdown',e=>{e.preventDefault();jump()});
+$('slide').addEventListener('pointerdown',e=>{e.preventDefault();slide(true)});
+['pointerup','pointercancel','pointerleave'].forEach(ev=>
+ $('slide').addEventListener(ev,()=>slide(false))
+);
+$('boost').addEventListener('click',boost);
+$('sound').addEventListener('click',()=>{
+ soundOn=!soundOn;
+ $('sound').textContent=soundOn?'🔊 SOUND ON':'🔇 SOUND OFF';
+ if(soundOn)beep();
+});
+
+window.addEventListener('keydown',e=>{
+ if(['Space','ArrowUp','ArrowDown'].includes(e.code))e.preventDefault();
+ if(e.repeat)return;
+ if(e.code==='Space'||e.code==='ArrowUp')jump();
+ if(e.code==='ArrowDown')slide(true);
+ if(e.code==='KeyS')boost();
+ if((e.code==='Enter')&&!running)startGame();
+});
+window.addEventListener('keyup',e=>{
+ if(e.code==='ArrowDown')slide(false);
+});
+
+function updateStats(){
+ $('score').textContent=Math.floor(score);
+ $('best').textContent=best;
+ $('coins').textContent=coins;
+}
+
+function spawnObstacle(){
+ const type=Math.random();
+ if(type<.53){
+  obstacles.push({type:'spikes',x:W+30,w:34+Math.random()*22,h:27+Math.random()*12});
+ }else if(type<.82){
+  obstacles.push({type:'crate',x:W+30,w:35,h:38});
+ }else{
+  obstacles.push({type:'drone',x:W+30,w:47,h:27,y:ground-65});
+ }
+}
+function spawnCoins(){
+ const count=3+Math.floor(Math.random()*3);
+ for(let i=0;i<count;i++)
+  pickups.push({x:W+30+i*32,y:ground-75-Math.sin(i/count*Math.PI)*35,r:9,got:false});
+}
+
+function update(dt){
+ elapsed+=dt;
+ speed=Math.min(650,300+elapsed*5);
+ if(boostTime>0)boostTime-=dt;
+ const actual=speed*(boostTime>0?1.65:1);
+ score+=dt*actual*.08;
+ dino.step+=dt*actual*.035;
+
+ dino.slide=slideHeld&&dino.y>=ground-dino.h-1;
+ dino.vy+=1550*dt;
+ dino.y+=dino.vy*dt;
+ if(dino.y>=ground-dino.h){dino.y=ground-dino.h;dino.vy=0}
+
+ spawn-=dt;
+ if(spawn<=0){spawnObstacle();spawn=Math.max(.65,1.45-Math.min(.7,elapsed*.008))+Math.random()*.5}
+ coinSpawn-=dt;
+ if(coinSpawn<=0){spawnCoins();coinSpawn=2.2+Math.random()*1.7}
+
+ for(const o of obstacles)o.x-=actual*dt;
+ obstacles=obstacles.filter(o=>o.x+o.w>-20);
+ for(const c of pickups)c.x-=actual*dt;
+ pickups=pickups.filter(c=>c.x>-20&&!c.got);
+
+ // Player hitbox; sliding makes the player shorter.
+ const ph=dino.slide?27:42;
+ const py=dino.y+(dino.slide?25:8);
+ for(const o of obstacles){
+  const oy=o.type==='drone'?o.y:ground-o.h;
+  const ox=o.x,oh=o.type==='drone'?o.h:o.h;
+  const playerLeft=dino.x+7,playerRight=dino.x+dino.w-7;
+  const hit=playerRight>ox+4&&playerLeft<ox+o.w-4&&
+   py+ph>oy+3&&py<oy+oh-2;
+  if(hit){endGame();return}
+ }
+ for(const c of pickups){
+  const px=dino.x+dino.w/2,py2=dino.y+dino.h/2;
+  if(!c.got&&Math.hypot(c.x-px,c.y-py2)<c.r+23){
+   c.got=true;coins++;score+=10;beep(900,.05);
+   for(let i=0;i<5;i++)particles.push({x:c.x,y:c.y,vx:(Math.random()-.5)*100,vy:-Math.random()*100,t:.4});
+  }
+ }
+ for(const p of particles){p.x+=p.vx*dt;p.y+=p.vy*dt;p.t-=dt}
+ particles=particles.filter(p=>p.t>0);
+ updateStats();
+}
+
+function rounded(x,y,w,h,r){
+ ctx.beginPath();ctx.roundRect(x,y,w,h,r);ctx.fill();
+}
+function draw(){
+ const sky=ctx.createLinearGradient(0,0,0,H);
+ sky.addColorStop(0,'#050b1b');sky.addColorStop(.7,'#10274b');sky.addColorStop(1,'#071b25');
+ ctx.fillStyle=sky;ctx.fillRect(0,0,W,H);
+
+ // Stars
+ for(let i=0;i<65;i++){
+  const x=(i*137+elapsed*8*(i%3+1))%(W+10);
+  const y=(i*71)%Math.floor(ground*.72);
+  ctx.fillStyle=i%3?'#497aa9':'#6affea';
+  ctx.globalAlpha=.3+(i%5)*.13;
+  ctx.fillRect(x,y,2,2);
+ }
+ ctx.globalAlpha=1;
+
+ // Moon
+
+  // Glowing 14-day half moon
+  const moonX = W * 0.72;
+  const moonY = H * 0.22;
+  const moonR = Math.min(46, H * 0.105);
+
+  ctx.save();
+
+  // Blue atmospheric glow
+  ctx.shadowColor = "#147bff";
+  ctx.shadowBlur = 30;
+  ctx.fillStyle = "#a9dfff";
+  ctx.beginPath();
+  ctx.arc(moonX, moonY, moonR, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.shadowBlur = 0;
+
+  // Lunar surface gradient
+  const moonGradient = ctx.createLinearGradient(
+    moonX - moonR, moonY,
+    moonX + moonR, moonY
+  );
+
+  moonGradient.addColorStop(0, "#101d48");
+  moonGradient.addColorStop(0.43, "#263d75");
+  moonGradient.addColorStop(0.75, "#a6d8ff");
+  moonGradient.addColorStop(1, "#e8f5ff");
+
+  ctx.fillStyle = moonGradient;
+  ctx.beginPath();
+  ctx.arc(moonX, moonY, moonR, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Dark left half and illuminated right half
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(moonX, moonY, moonR, 0, Math.PI * 2);
+  ctx.clip();
+
+  ctx.fillStyle = "#060e2c";
+  ctx.fillRect(moonX - moonR, moonY - moonR,
+               moonR, moonR * 2);
+
+  // Subtle lunar craters
+  ctx.fillStyle = "#6b91ca";
+  for (let i = 0; i < 12; i++) {
+    const a = i * 2.399;
+    const r = moonR * (0.15 + (i % 4) * 0.15);
+    const cx = moonX + Math.cos(a) * r;
+    const cy = moonY + Math.sin(a) * r;
+
+    ctx.globalAlpha = 0.25;
+    ctx.beginPath();
+    ctx.arc(cx, cy, 2 + i % 4, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  ctx.globalAlpha = 1;
+  ctx.restore();
+
+  // Futuristic orbital circuit rings
+  ctx.strokeStyle = "#278aff";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(moonX, moonY, moonR + 10, 0, Math.PI * 2);
+  ctx.stroke();
+
+  ctx.setLineDash([4, 7]);
+  ctx.beginPath();
+  ctx.arc(moonX, moonY, moonR + 17, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  ctx.restore();
+
+
+ // Distant mountains
+ ctx.fillStyle='#101f3b';
+ ctx.beginPath();ctx.moveTo(0,ground);
+ for(let x=0;x<=W;x+=50){
+  ctx.lineTo(x,ground-25-Math.abs(Math.sin(x*.02))*60);
+ }
+ ctx.lineTo(W,ground);ctx.fill();
+
+ // City skyline
+ ctx.fillStyle='#0b2340';
+ for(let i=0;i<14;i++){
+  const x=i*73+15;
+  const h=45+(i*37%100);
+  ctx.fillRect(x,ground-h,35,h);
+  ctx.fillStyle='#1b9cba';
+  for(let y=ground-h+10;y<ground-10;y+=16)ctx.fillRect(x+8,y,4,3);
+  ctx.fillStyle='#0b2340';
+ }
+
+ // Ground
+ ctx.fillStyle='#07111d';ctx.fillRect(0,ground,W,H-ground);
+ ctx.fillStyle='#32ffe0';ctx.fillRect(0,ground,W,3);
+ ctx.fillStyle='#10576b';ctx.fillRect(0,ground+5,W,2);
+ for(let i=0;i<24;i++){
+  let x=(i*59-elapsed*speed*.65)%(W+20);
+  if(x<0)x+=W+20;
+  ctx.fillStyle='#157083';ctx.fillRect(x,ground+24+(i%3)*23,20,2);
+ }
+
+ // Coins
+ for(const c of pickups){
+  if(c.got)continue;
+  ctx.save();ctx.shadowColor='#ffc94a';ctx.shadowBlur=16;
+  ctx.fillStyle='#ffc94a';ctx.beginPath();ctx.arc(c.x,c.y,c.r,0,7);ctx.fill();
+  ctx.strokeStyle='#fff2a5';ctx.lineWidth=2;ctx.stroke();
+  ctx.fillStyle='#7d4c09';ctx.font='bold 12px Arial';ctx.textAlign='center';
+  ctx.fillText('$',c.x,c.y+4);ctx.restore();
+ }
+
+ // Obstacles
+ for(const o of obstacles){
+  if(o.type==='spikes'){
+   ctx.shadowColor='#36f9e2';ctx.shadowBlur=9;
+   ctx.fillStyle='#24c9d7';
+   for(let x=o.x;x<o.x+o.w;x+=20){
+    ctx.beginPath();ctx.moveTo(x,ground);ctx.lineTo(x+10,ground-o.h);ctx.lineTo(x+20,ground);ctx.fill();
+   }
+   ctx.shadowBlur=0;
+  }else if(o.type==='crate'){
+   ctx.fillStyle='#174b60';rounded(o.x,ground-o.h,o.w,o.h,4);
+   ctx.strokeStyle='#43ffdd';ctx.lineWidth=2;ctx.strokeRect(o.x+2,ground-o.h+2,o.w-4,o.h-4);
+   ctx.strokeStyle='#2a8ca0';ctx.beginPath();
+   ctx.moveTo(o.x+6,ground-o.h+6);ctx.lineTo(o.x+o.w-6,ground-6);
+   ctx.moveTo(o.x+o.w-6,ground-o.h+6);ctx.lineTo(o.x+6,ground-6);ctx.stroke();
+  }else{
+   ctx.shadowColor='#ff365e';ctx.shadowBlur=15;
+   ctx.fillStyle='#1c2c48';rounded(o.x,o.y,o.w,o.h,10);
+   ctx.fillStyle='#ff315b';rounded(o.x+12,o.y+9,o.w-24,5,2);
+   ctx.shadowBlur=0;
+  }
+ }
+
+ // Cyber dinosaur
+ ctx.save();
+ const x=dino.x,y=dino.y;
+ ctx.shadowColor='#24ffe0';ctx.shadowBlur=12;
+ ctx.fillStyle='#087d83';
+ if(dino.slide){
+  rounded(x,y+26,47,23,8);
+  rounded(x+27,y+17,18,17,5);
+ }else{
+  // tail
+  ctx.beginPath();ctx.moveTo(x+6,y+28);ctx.lineTo(x-8,y+19);
+  ctx.lineTo(x+2,y+37);ctx.fill();
+  rounded(x+5,y+20,30,29,5);
+  rounded(x+23,y+3,25,25,5);
+  // legs
+  const step=Math.sin(dino.step)*5;
+  ctx.fillStyle='#1ce4cb';
+  ctx.fillRect(x+10,y+43,9,10+step);
+  ctx.fillRect(x+28,y+43,9,10-step);
+  // tiny arms
+  ctx.fillRect(x+29,y+28,11,4);
+ }
+ ctx.shadowBlur=0;
+ ctx.fillStyle='#eaffff';ctx.fillRect(x+39,y+9,5,5);
+ ctx.fillStyle='#04121c';ctx.fillRect(x+41,y+10,2,3);
+ ctx.fillStyle='#32ffda';ctx.fillRect(x+12,y+25,10,3);
+ ctx.restore();
+
+ // Boost indicator
+ if(boostTime>0){
+  ctx.fillStyle='#4affc9';ctx.font='bold 18px Arial';
+  ctx.fillText('⚡ BOOST '+boostTime.toFixed(1),W-160,35);
+ }
+ for(const p of particles){
+  ctx.globalAlpha=Math.max(0,p.t*2);
+  ctx.fillStyle='#ffe45d';ctx.fillRect(p.x,p.y,4,4);
+ }
+ ctx.globalAlpha=1;
+
+ // Intro instructions
+ if(!running&&!dead){
+  ctx.fillStyle='#8ac6df';ctx.font='14px Arial';
+  ctx.fillText('NEON DESERT // SECTOR 01',24,30);
+ }
+}
+
+function loop(now){
+ if(!running)return;
+ const dt=Math.min((now-last)/1000,.033);
+ last=now;
+ update(dt);
+ draw();
+ if(running)requestAnimationFrame(loop);
+}
+
+resize();
+</script>
+</body>
+</html>
